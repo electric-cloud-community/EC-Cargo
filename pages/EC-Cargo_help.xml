@@ -1,0 +1,485 @@
+<?xml version="1.0"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta name="generator" content="HTML Tidy for Windows (vers 14 February 2006), see www.w3.org" />
+    <meta content="text/html; charset=us-ascii" http-equiv="content-type" />
+
+    <title>ElectricFlow Plugin for Cargo</title>
+    <link rel="stylesheet" href="../../plugins/@PLUGIN_KEY@/pluginhelp.css" type="text/css" media="screen" />
+</head>
+
+<body>
+    <div class="help">
+        <h1>Cargo Resource Management</h1>
+
+        <p>Plugin Version @PLUGIN_VERSION@</p>
+        <hr style="margin-left: -10px; margin-top: 10px; height: 1px; width: 100%; color: #5981BD;" noshade="noshade" />
+        <!-- The tool description should answer these kinds of questions:
+		What is the tool itself is used for in the development
+		process? Who would use this tool? What is the general use-case or
+		problem that this tool solves? Look at the tool's documentation or
+		website(s) to get their own descriptions. Look at Wikipedia or other
+		outside websites. If there is a Hudson plugin, read their
+		documentation for ideas, examples, etc. It's OK to copy word-for-word
+		only if appropriate, such as FOSS - but not commercial software.
+		-->
+
+        <p>Cargo is a thin wrapper that allows you to manipulate
+        Java EE containers in a standard way. Cargo is often used
+        to deploy applications to containers from test APIs (such
+        as JUnit), ANT or Maven builds.</p>
+
+        <h2>Cargo Links</h2>
+
+        <ul>
+            <li><a href="http://cargo.codehaus.org/">Cargo home
+            page</a></li>
+        </ul>
+
+        <h2>ElectricFlow Integration to Cargo</h2>
+        <!-- The integration description should answer the questions:
+		How deep does our integration go? Why should I care? What general
+		functionality does the plugin include? What functionality does
+		the plugin omit?
+		-->
+
+        <p>This plugin allows users to interact with the Cargo Tool
+        using the Maven API. As Maven is configured for Maven
+        central by default, no additional installation or
+        repository configuration is necessary to use Cargo with
+        Maven. Cargo has a long list of supported containers, but
+        in this EC-Cargo plugin the user can interact with 4
+        application servers: Tomcat version 6.x, Jetty Version 8.x,
+        JBoss version 7.x and WebLogic version 10.3.x.</p>
+
+        <h2>Integrated Version</h2>
+
+        <p>This plugin was developed and tested against Cargo
+        version 1.2 and Maven 3.0.4.</p>
+
+        <h1>Plugin Procedures</h1>
+
+        <p>IMPORTANT: For all parameter descriptions below,
+        required parameters are shown in
+        <span class="required">bold italics</span>.</p>
+
+        <div id="CreateConfiguration">
+            <a name="CreateConfiguration" id="CreateConfiguration"></a> 
+
+            <h3>Plugin Configuration</h3>
+            <!-- If the plugin has separate configurations then include this section,
+			otherwise omit this whole section. We don't need to have a configuration
+			section that just says "There is no configuration for this plugin."
+			-->
+
+            <p>Plugin configurations are sets of parameters that
+            apply across some or all of the plugin's procedures.
+            They are intended to reduce repetition of common
+            values, create predefined sets of parameters for end
+            users, and to securely store credentials where needed.
+            Each configuration is given a unique name that is
+            entered in designated parameters on procedures that use
+            them.</p>
+            <!-- For all parameters, the parameter name should be *exactly* the same as it appears in the
+			Parameter Panel, and the first sentence(s) of the description should be
+			the same as the tooltip (if there is one). After that, the parameter
+			description can go into greater detail about the parameter including
+			valid value ranges and examples.
+			-->
+
+            <p>To enable Commander to communicate with Cargo,
+            create a Cargo configuration. The user can create many
+            configurations, depending of the container and the
+            location of the container to use. To create a
+            configuration, supply the following information:</p>
+
+            <table class="grid">
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+
+                        <th>Description</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <tr>
+                        <td class="required">Configuration
+                        Name</td>
+
+                        <td>Name of the configuration to be used
+                        for retrieving Admin Server's URL and
+                        credentials.</td>
+                    </tr>
+
+                    <tr>
+                        <td class="required">Container</td>
+
+                        <td>Choose the container to deploy the
+                        application. The options are "tomcat6x"
+                        (default), "jboss7x", "jetty8x" and
+                        "weblogic103". (Required)</td>
+                    </tr>
+
+                    <tr>
+                        <td class="required">Container
+                        Location</td>
+
+                        <td>Choose the location of the container.
+                        Choose "local" if the container is
+                        installed in the same computer where
+                        maven-cargo are running, otherwise choose
+                        "remote". (Required)</td>
+                    </tr>
+
+                    <tr>
+                        <td class="required">Container Path</td>
+
+                        <td>The home folder of the container. This
+                        parameter is required and used only if the
+                        "Container Location" is local. Use the
+                        installation path directory for tomcat,
+                        jboss and jetty containers, and the domain
+                        path directory for the weblogic container.
+                        e.g "C:\apache-tomcat-6.0.33" or "C:\jboss"
+                        or "C:\jetty8.1.2" or
+                        "C:\Oracle\Middleware\user_projects\domains\domain1".</td>
+                    </tr>
+
+                    <tr>
+                        <td class="required">URL</td>
+
+                        <td>The URL of the container. Include the
+                        protocol, host and port. For weblogic
+                        container use the listen port, default is
+                        7001. For jboss container use the
+                        management port, default is 9999. For jetty
+                        container use the listen port, default is
+                        8080. For tomcat container use the listen
+                        port, default is 8080. e.g
+                        "http://localhost:7001" or
+                        "http://192.168.6.68:9990" or
+                        "http://localhost:8081". (Required)</td>
+                    </tr>
+
+                    <tr>
+                        <td>Login as</td>
+                        <!-- Describe *exactly* which user name and password go here.
+						Is it for a particular machine? Is it for a website? Is it for a
+						particular function in the tool? Does it depend on another
+						parameter (like a machine name) for its meaning?
+						-->
+
+                        <td><i>Username</i>: Provide the user name
+                        Commander uses to communicate with the
+                        selected container.<br />
+                         <i>Password</i>: Provide the password for
+                        the specified Username.<br />
+                         <i>Retype Password</i>: Retype the
+                        password specified.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p>Tomcat
+            configuration:</p><img src="../../plugins/EC-Cargo/images/Config/TomcatConfig.png" />
+             
+
+            <p>JBoss
+            configuration:</p><img src="../../plugins/EC-Cargo/images/Config/JBossConfig.png" />
+             
+
+            <p>Jetty
+            configuration:</p><img src="../../plugins/EC-Cargo/images/Config/JettyConfig.png" />
+             
+
+            <p>WebLogic
+            configuration:</p><img src="../../plugins/EC-Cargo/images/Config/WebLogicConfig.png" />
+            </div>
+
+        <div id="DeployApp">
+            <a name="DeployApp" id="DeployApp"></a> 
+
+            <h3>DeployApp</h3>
+
+            <p>Deploys or redeploys an application or module using
+            cargo.</p>
+
+            <table class="grid">
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+
+                        <th>Description</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <tr>
+                        <td class="required">Configuration
+                        Name</td>
+
+                        <td>Provide the name of the configuration
+                        that holds connection information for the
+                        Cargo tool. (Required)</td>
+                    </tr>
+
+                    <tr>
+                        <td class="required">Application Path</td>
+
+                        <td>Absolute path of the application to
+                        deploy. (Required)</td>
+                    </tr>
+
+                    <tr>
+                        <td>Context Path</td>
+
+                        <td>Optional context path of the
+                        application to deploy.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p>To deploy an application, select the following
+            highlighted
+            step:</p><img src="../../plugins/EC-Cargo/images/DeployApp/CargoDeploy1.png" />
+             
+
+            <p>Then, enter the following
+            parameters:</p><img src="../../plugins/EC-Cargo/images/DeployApp/CargoDeploy2.png" />
+             
+
+            <p>When the job is executed, you should see the
+            following job detail, note the output indicating the
+            application was deployed
+            successfully:</p><img src="../../plugins/EC-Cargo/images/DeployApp/CargoDeploy3.png" />
+             
+
+            <p>In the <b>DeployApp</b> step, click the Log icon to
+            see the diagnostic info. The output is similar to the
+            following diagnostic
+            report:</p><img src="../../plugins/EC-Cargo/images/DeployApp/CargoDeploy4.png" />
+            </div>
+
+        <div id="UndeployApp">
+            <a name="UndeployApp" id="UndeployApp"></a> 
+
+            <h3>UndeployApp</h3>
+
+            <p>Stops the deployment unit and removes staged files
+            from target container.</p>
+
+            <table class="grid">
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+
+                        <th>Description</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <tr>
+                        <td class="required">Configuration
+                        Name</td>
+
+                        <td>Provide the name of the configuration
+                        that holds connection information for the
+                        Cargo tool. (Required)</td>
+                    </tr>
+
+                    <tr>
+                        <td class="required">Application Path</td>
+
+                        <td>Absolute path of the application to
+                        undeploy. (Required)</td>
+                    </tr>
+
+                    <tr>
+                        <td>Context Path</td>
+
+                        <td>Optional context path of the
+                        application to undeploy. If the application
+                        was installed with a provided context path,
+                        this context path must provided with the
+                        same name to locate de application.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p>To undeploy an application, select the following
+            highlighted
+            step:</p><img src="../../plugins/EC-Cargo/images/UndeployApp/CargoUndeploy1.png" />
+             
+
+            <p>Then, enter the following
+            parameters:</p><img src="../../plugins/EC-Cargo/images/UndeployApp/CargoUndeploy2.png" />
+             
+
+            <p>When the job is executed, you should see the
+            following job detail, note the output indicating the
+            application was undeployed
+            successfully:</p><img src="../../plugins/EC-Cargo/images/UndeployApp/CargoUndeploy3.png" />
+             
+
+            <p>In the <b>UndeployApp</b> step, click the Log icon
+            to see the diagnostic info. The output is similar to
+            the following diagnostic
+            report:</p><img src="../../plugins/EC-Cargo/images/UndeployApp/CargoUndeploy4.png" />
+            </div>
+
+        <div id="RunContainer">
+            <a name="RunContainer" id="RunContainer"></a> 
+
+            <h3>RunContainer</h3>
+
+            <p>Runs the selected container in the
+            configuration.</p>
+
+            <table class="grid">
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+
+                        <th>Description</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <tr>
+                        <td class="required">Configuration
+                        Name</td>
+
+                        <td>Provide the name of the configuration
+                        that holds connection information such as
+                        the container and the credentials for the
+                        Cargo tool. (Required)</td>
+                    </tr>
+
+                    <tr>
+                        <td class="required">Application Path</td>
+
+                        <td>Absolute path of the application
+                        pom.xml file where is locataed the
+                        configuration of the container to run, and
+                        the application to deploy after run the
+                        container. (Required)</td>
+                    </tr>
+
+                    <tr>
+                        <td>Time limit</td>
+
+                        <td>Time to wait for test the connectivity
+                        of the container and the deployment if
+                        there is one (if blank, the execution waits
+                        10 seconds by default after running the
+                        container).</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p>To run the seleted container, select the following
+            highlighted
+            step:</p><img src="../../plugins/EC-Cargo/images/RunContainer/CargoRun1.png" />
+             
+
+            <p>Then, enter the following
+            parameters:</p><img src="../../plugins/EC-Cargo/images/RunContainer/CargoRun2.png" />
+             
+
+            <p>When the job is executed, you should see the
+            following job detail, note the output indicating the
+            job ran
+            successfully:</p><img src="../../plugins/EC-Cargo/images/RunContainer/CargoRun3.png" />
+             
+
+            <p>In the <b>RunContainer</b> step, click the Log icon
+            to see the diagnostic info. The output is similar to
+            the following diagnostic
+            report:</p><img src="../../plugins/EC-Cargo/images/RunContainer/CargoRun4.png" />
+            </div>
+
+        <div id="StopContainer">
+            <a name="StopContainer" id="StopContainer"></a> 
+
+            <h3>StopContainer</h3>
+
+            <p>Stops the selected container in the
+            configuration.</p>
+
+            <table class="grid">
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+
+                        <th>Description</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <tr>
+                        <td class="required">Configuration
+                        Name</td>
+
+                        <td>Provide the name of the configuration
+                        that holds connection information such as
+                        the container and the credentials for the
+                        Cargo tool. (Required)</td>
+                    </tr>
+
+                    <tr>
+                        <td class="required">Application Path</td>
+
+                        <td>Absolute path of the application
+                        pom.xml file where is locataed the
+                        configuration of the container to stop the
+                        container. (Required)</td>
+                    </tr>
+
+                    <tr>
+                        <td>Time limit</td>
+
+                        <td>Time to wait for test the connectivity
+                        of the container (if blank, the execution
+                        waits 10 seconds by default after stopping
+                        the container).</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p>To stop the selected container, select the following
+            highlighted
+            step:</p><img src="../../plugins/EC-Cargo/images/StopContainer/CargoStop1.png" />
+             
+
+            <p>Then, enter the following
+            parameters:</p><img src="../../plugins/EC-Cargo/images/StopContainer/CargoStop2.png" />
+             
+
+            <p>When the job is executed, you should see the
+            following job detail, note the output indicating the
+            job ran
+            successfully:</p><img src="../../plugins/EC-Cargo/images/StopContainer/CargoStop3.png" />
+             
+
+            <p>In the <b>StopContainer</b> step, click the Log icon
+            to see the diagnostic info. The output is similar to
+            the following diagnostic
+            report:</p><img src="../../plugins/EC-Cargo/images/StopContainer/CargoStop4.png" />
+            </div>
+
+        <h1>Release Notes</h1>
+	<h2>@PLUGIN_KEY@ 1.0.1</h2>
+    <ul>
+        <li>Fixed issue with configurations being cached for IE.</li>
+    </ul>
+
+        <h2>@PLUGIN_KEY@ 1.0.0</h2>
+
+        <ul>
+            <li>Plugin creation.</li>
+        </ul>
+    </div>
+</body>
+</html>

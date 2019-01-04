@@ -1,0 +1,24 @@
+<editor>
+    <help>/commander/pages/@PLUGIN_NAME@/@PLUGIN_KEY@_help?s=Administration&amp;ss=Plugins#StopContainer</help>
+    <formElement>
+        <type>entry</type>
+        <label>Configuration Name:</label>
+        <property>configname</property>
+        <required>1</required>
+        <documentation>Provide the name of the configuration that holds connection information such as the container and the credentials for the Cargo tool. (Required)</documentation>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>Application Path:</label>
+        <property>appPath</property>
+        <required>1</required>
+        <documentation>Absolute path of the application pom.xml file where is locataed the configuration of the container to stop the container. (Required)</documentation>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>Time limit:</label>
+        <property>timelimit</property>
+        <required>0</required>
+        <documentation>>Time to wait for test the connectivity of the container (if blank, the execution waits 10 seconds by default after stopping the container).</documentation>
+    </formElement>
+</editor>

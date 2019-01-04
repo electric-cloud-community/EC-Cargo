@@ -1,0 +1,24 @@
+<editor>
+    <help>/commander/pages/@PLUGIN_NAME@/@PLUGIN_KEY@_help?s=Administration&amp;ss=Plugins#DeployApp</help>
+    <formElement>
+        <type>entry</type>
+        <label>Configuration Name:</label>
+        <property>configname</property>
+        <required>1</required>
+        <documentation>Provide the name of the configuration that holds connection information for the Cargo tool. (Required)</documentation>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>Application Path:</label>
+        <property>appPath</property>
+        <required>1</required>
+        <documentation>Absolute path of the application to deploy. (Required)</documentation>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>Context Path:</label>
+        <property>contextPath</property>
+        <required>0</required>
+        <documentation>Optional context path of the application to deploy.</documentation>
+    </formElement>
+</editor>

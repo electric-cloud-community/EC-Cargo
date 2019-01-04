@@ -1,0 +1,45 @@
+<editor>
+    <formElement>
+        <label>Container:</label>
+        <property>container</property>
+        <value>tomcat6x</value>
+        <documentation>Choose the container to deploy the application. (Required)</documentation>
+        <required>1</required>
+        <type>select</type>
+        <option><name>tomcat6x</name><value>tomcat6x</value></option>
+        <option><name>jetty8x</name><value>jetty8x</value></option>
+        <option><name>jboss7x</name><value>jboss7x</value></option>
+        <option><name>weblogic103x</name><value>weblogic103x</value></option>
+    </formElement>
+    <formElement>
+        <label>Container Location:</label>
+        <property>containerLocation</property>
+        <value>local</value>
+        <documentation>Choose the container location. (Required)</documentation>
+        <required>1</required>
+        <type>select</type>
+        <option><name>local</name><value>local</value></option>
+        <option><name>remote</name><value>remote</value></option>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>Container Path:</label>
+        <property>containerPath</property>
+        <documentation>The home folder of the container. This parameter is required and used only if the "Container Location" is local. Use the installation path directory for tomcat, jboss and jetty containers, and the domain path directory for the weblogic container. e.g "C:\apache-tomcat-6.0.33" or "C:\jboss" or "C:\jetty8.1.2" or "C:\Oracle\Middleware\user_projects\domains\domain1".</documentation>
+        <required>0</required>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>URL:</label>
+        <property>url</property>
+        <documentation>The URL of the container. Include the protocol, host and port. For weblogic container use the listen port, default is 7001. For jboss container use the management port, default is 9999. For jetty container use the listen port, default is 8080. For tomcat container use the listen port, default is 8080. e.g "http://localhost:7001" or "http://192.168.6.68:9990" or "http://localhost:8081". (Required)</documentation>
+        <required>1</required>
+    </formElement>
+    <formElement>
+        <type>credential</type>
+        <label>Login as:</label>
+        <property>credential</property>
+        <value></value>
+        <required>0</required>
+    </formElement>    
+</editor>

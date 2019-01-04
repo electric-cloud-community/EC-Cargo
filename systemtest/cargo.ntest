@@ -1,0 +1,1006 @@
+# -*-Perl-*-
+
+###############################
+# cargo.ntest
+#
+# Exercise basic components of EC-Cargo plugin
+#
+# Copyright (c) 2005-2012 Electric Cloud, Inc.
+# All rights reserved
+###############################
+
+use strict;
+use warnings;
+use ECTest;
+
+initCommander();
+
+$::gPlugin_name   = $::ENV{PLUGIN_NAME};
+$::gPlugin_key    = $::gPlugin_name;
+$::gPlugin_key    =~ s/-[^-]+$//;
+$::gPlugin_driver = $::gPlugin_key;
+$::gPlugin_driver =~ s/-/::/g;
+
+   use constant {
+       SUCCESS => 0,
+       ERROR   => 1,
+       WINDOWS_OS_ID => 'MSWin32'
+   };
+
+# win/lin matches the chronic3 procedure platform property
+$::gPlatform       = 'lin';
+if ($^O eq WINDOWS_OS_ID) {
+    $::gPlatform = 'win';
+}
+
+# from initCommander
+$::N = $adminSession;
+my $xpath = $::N->getPlugin($::gPlugin_key);
+$::gPlugin_name = $xpath->findvalue('//pluginName')->value;
+$::gPlugin_ver = $xpath->findvalue('//pluginVersion')->value;
+$::gCreatePrivateDirs = 1;
+
+
+
+# triggers fake data
+$::gRunTestUseFakeOutput = 1;
+
+$::gProjectImported = 0;
+$::gtestProjectName = 'CargoTestProject';
+
+my $outcome = '';
+
+########################################################################
+# importProject - imports the test project and asserts that the specified
+#                 procedures exists
+#
+# Arguments:
+#   -none
+#
+# Returns:
+#   -nothing
+#
+########################################################################
+sub importProject() {
+ 
+    #assert project exists and is imported
+    assertOK($::N->import(
+             { file =>"$::gTestFileDir/cargoSystemTests.xml",
+               path  => "/projects/CargoTestProject",
+               force => 1
+             } ), 'import unsuccessful');
+    
+    #assert all given procedures exist   
+    assertOK($::N->getProcedure($::gtestProjectName, 'deployAppJBoss'),
+    'deployAppJBoss procedure doesn\'t exist');
+    
+    assertOK($::N->getProcedure($::gtestProjectName, 'undeployAppJBoss'),
+    'undeployAppJBoss procedure doesn\'t exist');
+    
+    assertOK($::N->getProcedure($::gtestProjectName, 'deployAppTomcat'),
+    'deployAppJBoss procedure doesn\'t exist');
+    
+    assertOK($::N->getProcedure($::gtestProjectName, 'undeployAppTomcat'),
+    'undeployAppJBoss procedure doesn\'t exist');
+    
+    assertOK($::N->getProcedure($::gtestProjectName, 'deployAppJetty'),
+    'deployAppJetty procedure doesn\'t exist');
+        
+    assertOK($::N->getProcedure($::gtestProjectName, 'deployAppWebLogic'),
+    'deployAppWebLogic procedure doesn\'t exist');
+    
+    assertOK($::N->getProcedure($::gtestProjectName, 'undeployAppWebLogic'),
+    'undeployAppWebLogic procedure doesn\'t exist');
+    
+    assertOK($::N->getProcedure($::gtestProjectName, 'runContainerJBoss'),
+    'deployAppJBoss procedure doesn\'t exist');
+    
+    assertOK($::N->getProcedure($::gtestProjectName, 'stopContainerJBoss'),
+    'undeployAppJBoss procedure doesn\'t exist');    
+    
+    assertOK($::N->getProcedure($::gtestProjectName, 'runContainerTomcat'),
+    'deployAppJBoss procedure doesn\'t exist');
+    
+    assertOK($::N->getProcedure($::gtestProjectName, 'stopContainerTomcat'),
+    'undeployAppJBoss procedure doesn\'t exist');
+    
+    assertOK($::N->getProcedure($::gtestProjectName, 'runContainerWebLogic'),
+    'deployAppJBoss procedure doesn\'t exist');
+    
+    assertOK($::N->getProcedure($::gtestProjectName, 'stopContainerWebLogic'),
+    'undeployAppJBoss procedure doesn\'t exist');
+        
+    assertOK($::N->getProcedure($::gtestProjectName, 'runContainerJBoss'),
+    'runContainerJBoss procedure doesn\'t exist');
+    
+    assertOK($::N->getProcedure($::gtestProjectName, 'stopContainerJBoss'),
+    'stopContainerJBoss procedure doesn\'t exist');
+    
+    assertOK($::N->getProcedure($::gtestProjectName, 'runContainerTomcat'),
+    'runContainerTomcat procedure doesn\'t exist');
+    
+    assertOK($::N->getProcedure($::gtestProjectName, 'stopContainerTomcat'),
+    'stopContainerTomcat procedure doesn\'t exist');
+    
+    $::gProjectImported = 1;
+}
+
+########################################################################
+# doSetup - invokes the project import method in case it hasn't been 
+#           executed
+#
+# Arguments:
+#   -none
+#
+# Returns:
+#   -nothing
+#
+########################################################################
+sub doSetup() {
+
+    if(! $::gProjectImported) {
+        importProject();
+    }
+    
+}
+
+################################
+# check-components-present - Check that the plugin contains required components
+#
+# Arguments:
+#   none
+#
+# Returns:
+#   none
+#
+################################
+ntest "check-components-present", {}, sub {
+    
+    my $xpath = $::N->getSteps("$::gPlugin_name","CreateConfiguration");
+    assertOK($xpath,"CreateConfiguration");
+    assertEq("CreateConfiguration", $xpath->findvalue("//step[1]/stepName"), "step 1 is CreateConfiguration");
+    assertEq("CreateAndAttachCredential", $xpath->findvalue("//step[2]/stepName"), "step 2 is CreateAndAttachCredential");
+
+};
+
+################################
+# setup-create configuration - Test creating a configuration
+#
+# Arguments:
+#   none
+#
+# Returns:
+#   none
+#
+################################
+ntest "setup-create configuration jboss", {}, sub {
+    my $xpath = $::N->runProcedure("$::gPlugin_name", 
+        { procedureName => "CreateConfiguration",
+          pollInterval  => '0.2',
+          timeout       => 600,
+          actualParameter => [ 
+            { actualParameterName => 'config', value => "jboss" }, 
+            { actualParameterName => 'container', value => "jboss7x" }, 
+            { actualParameterName => 'containerLocation', value => "local" }, 
+            { actualParameterName => 'containerPath', value => "C:\\jboss\\jboss-as-web-7.0.1.Final" }, 
+            { actualParameterName => 'url', value => "http://localhost:9990" }, 
+            { actualParameterName => 'credential', value => "jboss" }, 
+          ],
+          credential => [ 
+            { credentialName => 'jboss', userName => "jboss", password => "jboss", },
+          ],
+        });
+
+    assertOK($xpath, 'run create configuration procedure');
+    # make sure it finished
+    my $jobId = 0;
+    my $status = '';
+    assertDef($xpath, 'runProcedure finished without a timeout');
+    if ($xpath) {
+        $jobId  = $xpath->findvalue("//jobId");
+        $status = $xpath->findvalue("//status");
+
+        assertTrue($jobId && $jobId ne "",'valid job id');
+        assertEq('completed',$status,"job $jobId complete");
+
+        #abort if job did not finish
+        if ($status ne 'completed') {
+            assertOK($::N->abortJob($jobId, {force => 1}));
+        }
+    }
+
+    # examine log files
+    $xpath = $::N->getJobDetails($jobId);
+
+    writeFile("$::gCurrentTestDir/createConfiguration.log","====Job Details====\n$xpath->{_xml}\n");
+
+    # check that the config and credential exist
+    $xpath = $::N->getProperty("/projects/$::gPlugin_name/cargo_cfgs/jboss/url");
+    assertEq('http://localhost:9990', $xpath->findvalue("//value")->string_value,"url");
+    
+    $xpath = $::N->getCredential("$::gPlugin_name",'jboss');
+    assertEq('jboss', $xpath->findvalue("//userName")->string_value, 'Credential user');
+};
+
+
+################################
+# setup-create configuration - Test creating a configuration
+#
+# Arguments:
+#   none
+#
+# Returns:
+#   none
+#
+################################
+ntest "setup-create configuration tomcat", {}, sub {
+    my $xpath = $::N->runProcedure("$::gPlugin_name", 
+        { procedureName => "CreateConfiguration",
+          pollInterval  => '0.2',
+          timeout       => 600,
+          actualParameter => [ 
+            { actualParameterName => 'config', value => "tomcat" }, 
+            { actualParameterName => 'container', value => "tomcat6x" }, 
+            { actualParameterName => 'containerLocation', value => "local" }, 
+            { actualParameterName => 'containerPath', value => "C:\\apache-tomcat-6.0.33" }, 
+            { actualParameterName => 'url', value => "http://localhost:8081" }, 
+            { actualParameterName => 'credential', value => "tomcat" }, 
+          ],
+          credential => [ 
+            { credentialName => 'tomcat', userName => "tomcat", password => "tomcat", },
+          ],
+        });
+
+    assertOK($xpath, 'run create configuration procedure');
+    # make sure it finished
+    my $jobId = 0;
+    my $status = '';
+    assertDef($xpath, 'runProcedure finished without a timeout');
+    if ($xpath) {
+        $jobId  = $xpath->findvalue("//jobId");
+        $status = $xpath->findvalue("//status");
+
+        assertTrue($jobId && $jobId ne "",'valid job id');
+        assertEq('completed',$status,"job $jobId complete");
+
+        #abort if job did not finish
+        if ($status ne 'completed') {
+            assertOK($::N->abortJob($jobId, {force => 1}));
+        }
+    }
+
+    # examine log files
+    $xpath = $::N->getJobDetails($jobId);
+
+    writeFile("$::gCurrentTestDir/createConfiguration.log","====Job Details====\n$xpath->{_xml}\n");
+
+    # check that the config and credential exist
+    $xpath = $::N->getProperty("/projects/$::gPlugin_name/cargo_cfgs/tomcat/url");
+    assertEq('http://localhost:8081', $xpath->findvalue("//value")->string_value,"url");
+    
+    $xpath = $::N->getCredential("$::gPlugin_name",'tomcat');
+    assertEq('tomcat', $xpath->findvalue("//userName")->string_value, 'Credential user');
+};
+
+################################
+# setup-create configuration - Test creating a configuration
+#
+# Arguments:
+#   none
+#
+# Returns:
+#   none
+#
+################################
+ntest "setup-create configuration jetty", {}, sub {
+    my $xpath = $::N->runProcedure("$::gPlugin_name", 
+        { procedureName => "CreateConfiguration",
+          pollInterval  => '0.2',
+          timeout       => 600,
+          actualParameter => [ 
+            { actualParameterName => 'config', value => "jetty" }, 
+            { actualParameterName => 'container', value => "jetty8x" }, 
+            { actualParameterName => 'containerLocation', value => "local" }, 
+            { actualParameterName => 'containerPath', value => "C:\\jetty8.1.2" }, 
+            { actualParameterName => 'url', value => "http://localhost:8084" }, 
+            { actualParameterName => 'credential', value => "jetty" }, 
+          ],
+          credential => [ 
+            { credentialName => 'jetty', userName => "jetty", password => "jetty", },
+          ],
+        });
+
+    assertOK($xpath, 'run create configuration procedure');
+    # make sure it finished
+    my $jobId = 0;
+    my $status = '';
+    assertDef($xpath, 'runProcedure finished without a timeout');
+    if ($xpath) {
+        $jobId  = $xpath->findvalue("//jobId");
+        $status = $xpath->findvalue("//status");
+
+        assertTrue($jobId && $jobId ne "",'valid job id');
+        assertEq('completed',$status,"job $jobId complete");
+
+        #abort if job did not finish
+        if ($status ne 'completed') {
+            assertOK($::N->abortJob($jobId, {force => 1}));
+        }
+    }
+
+    # examine log files
+    $xpath = $::N->getJobDetails($jobId);
+
+    writeFile("$::gCurrentTestDir/createConfiguration.log","====Job Details====\n$xpath->{_xml}\n");
+
+    # check that the config and credential exist
+    $xpath = $::N->getProperty("/projects/$::gPlugin_name/cargo_cfgs/jetty/url");
+    assertEq('http://localhost:8084', $xpath->findvalue("//value")->string_value,"url");
+    
+    $xpath = $::N->getCredential("$::gPlugin_name",'jetty');
+    assertEq('jetty', $xpath->findvalue("//userName")->string_value, 'Credential user');
+};
+
+################################
+# setup-create configuration - Test creating a configuration
+#
+# Arguments:
+#   none
+#
+# Returns:
+#   none
+#
+################################
+ntest "setup-create configuration weblogic", {}, sub {
+    my $xpath = $::N->runProcedure("$::gPlugin_name", 
+        { procedureName => "CreateConfiguration",
+          pollInterval  => '0.2',
+          timeout       => 600,
+          actualParameter => [ 
+            { actualParameterName => 'config', value => "weblogic" }, 
+            { actualParameterName => 'container', value => "weblogic103x" }, 
+            { actualParameterName => 'containerLocation', value => "local" }, 
+            { actualParameterName => 'containerPath', value => "C:\\Oracle\\Middleware" }, 
+            { actualParameterName => 'url', value => "http://localhost:7001" }, 
+            { actualParameterName => 'credential', value => "weblogic" }, 
+          ],
+          credential => [ 
+            { credentialName => 'weblogic', userName => "weblogic", password => "weblogic", },
+          ],
+        });
+
+    assertOK($xpath, 'run create configuration procedure');
+    # make sure it finished
+    my $jobId = 0;
+    my $status = '';
+    assertDef($xpath, 'runProcedure finished without a timeout');
+    if ($xpath) {
+        $jobId  = $xpath->findvalue("//jobId");
+        $status = $xpath->findvalue("//status");
+
+        assertTrue($jobId && $jobId ne "",'valid job id');
+        assertEq('completed',$status,"job $jobId complete");
+
+        #abort if job did not finish
+        if ($status ne 'completed') {
+            assertOK($::N->abortJob($jobId, {force => 1}));
+        }
+    }
+
+    # examine log files
+    $xpath = $::N->getJobDetails($jobId);
+
+    writeFile("$::gCurrentTestDir/createConfiguration.log","====Job Details====\n$xpath->{_xml}\n");
+
+    # check that the config and credential exist
+    $xpath = $::N->getProperty("/projects/$::gPlugin_name/cargo_cfgs/weblogic/url");
+    assertEq('http://localhost:7001', $xpath->findvalue("//value")->string_value,"url");
+    
+    $xpath = $::N->getCredential("$::gPlugin_name",'weblogic');
+    assertEq('weblogic', $xpath->findvalue("//userName")->string_value, 'Credential user');
+};
+
+ntest "deployAppJBoss", {}, sub {
+ 
+      doSetup();
+      
+      # run test job
+     
+      my $xpath = $::N->runProcedure($::gtestProjectName, 
+              {procedureName => "deployAppJBoss",
+              pollInterval  => '1',
+              timeout => 600,
+                   actualParameter => [
+                  
+                  ]
+      });
+      
+      # make sure it finished
+      my $jobId = 0;
+      my $status = '';
+      
+      assertOK($xpath, 'runProcedure has errors');
+      if ($xpath) {
+       
+          $jobId  = $xpath->findvalue("//jobId");
+          $status = $xpath->findvalue("//status");
+          $outcome = $xpath->findvalue("//outcome");
+  
+          assertTrue($jobId && $jobId ne "",'valid job id');
+          assertEq('completed',$status,"job $jobId complete");
+  
+          #abort if job did not finish
+          if ($status ne 'completed') {
+              assertOK($::N->abortJob($jobId, {force => 1}));
+          }
+      }
+
+      # get the job details
+      $xpath = $::N->getJobDetails($jobId);
+   
+      # get the value of the commands lines
+      my $commandLine = $xpath->findvalue("//property[propertyName='cmdLine']/value");
+
+      assertEq('mvn cargo:deploy -f "C:\Users\rsanchez\group1\pom.xml" -P jboss7x -Dorg.jboss.as.client.connect.timeout=50000', $commandLine, 
+           'command line doesn\'t match expected output');
+
+};
+
+
+ntest "undeployAppJBoss", {}, sub {
+ 
+      doSetup();
+      
+      # run test job
+     
+      my $xpath = $::N->runProcedure($::gtestProjectName, 
+              {procedureName => "undeployAppJBoss",
+              pollInterval  => '1',
+              timeout => 600,
+                   actualParameter => [
+                  
+                  ]
+      });
+      
+      # make sure it finished
+      my $jobId = 0;
+      my $status = '';
+      
+      assertOK($xpath, 'runProcedure has errors');
+      if ($xpath) {
+       
+          $jobId  = $xpath->findvalue("//jobId");
+          $status = $xpath->findvalue("//status");
+          $outcome = $xpath->findvalue("//outcome");
+  
+          assertTrue($jobId && $jobId ne "",'valid job id');
+          assertEq('completed',$status,"job $jobId complete");
+  
+          #abort if job did not finish
+          #if ($status ne 'completed') {
+              #assertOK($::N->abortJob($jobId, {force => 1}));
+          #}
+      }
+
+      # get the job details
+      $xpath = $::N->getJobDetails($jobId);
+   
+      # get the value of the commands lines
+      my $commandLine = $xpath->findvalue("//property[propertyName='cmdLine']/value");
+
+      assertEq('mvn cargo:undeploy -f "C:\Users\rsanchez\group1\pom.xml" -P jboss7x -Dorg.jboss.as.client.connect.timeout=50000', $commandLine, 
+           'command line doesn\'t match expected output');
+
+};
+
+ntest "deployAppTomcat", {}, sub {
+ 
+      doSetup();
+      
+      # run test job
+     
+      my $xpath = $::N->runProcedure($::gtestProjectName, 
+              {procedureName => "deployAppTomcat",
+              pollInterval  => '1',
+              timeout => 600,
+                   actualParameter => [
+                  
+                  ]
+      });
+      
+      # make sure it finished
+      my $jobId = 0;
+      my $status = '';
+      
+      assertOK($xpath, 'runProcedure has errors');
+      if ($xpath) {
+       
+          $jobId  = $xpath->findvalue("//jobId");
+          $status = $xpath->findvalue("//status");
+          $outcome = $xpath->findvalue("//outcome");
+  
+          assertTrue($jobId && $jobId ne "",'valid job id');
+          assertEq('completed',$status,"job $jobId complete");
+  
+          #abort if job did not finish
+          if ($status ne 'completed') {
+              assertOK($::N->abortJob($jobId, {force => 1}));
+          }
+      }
+
+      # get the job details
+      $xpath = $::N->getJobDetails($jobId);
+   
+      # get the value of the commands lines
+      my $commandLine = $xpath->findvalue("//property[propertyName='cmdLine']/value");
+
+      assertEq('mvn cargo:deploy -f "C:\Users\rsanchez\group1\pom.xml" -P tomcat6x', $commandLine, 
+           'command line doesn\'t match expected output');
+
+};
+
+
+ntest "undeployAppTomcat", {}, sub {
+ 
+      doSetup();
+      
+      # run test job
+     
+      my $xpath = $::N->runProcedure($::gtestProjectName, 
+              {procedureName => "undeployAppTomcat",
+              pollInterval  => '1',
+              timeout => 600,
+                   actualParameter => [
+                  
+                  ]
+      });
+      
+      # make sure it finished
+      my $jobId = 0;
+      my $status = '';
+      
+      assertOK($xpath, 'runProcedure has errors');
+      if ($xpath) {
+       
+          $jobId  = $xpath->findvalue("//jobId");
+          $status = $xpath->findvalue("//status");
+          $outcome = $xpath->findvalue("//outcome");
+  
+          assertTrue($jobId && $jobId ne "",'valid job id');
+          assertEq('completed',$status,"job $jobId complete");
+  
+          #abort if job did not finish
+          if ($status ne 'completed') {
+              assertOK($::N->abortJob($jobId, {force => 1}));
+          }
+      }
+
+      # get the job details
+      $xpath = $::N->getJobDetails($jobId);
+   
+      # get the value of the commands lines
+      my $commandLine = $xpath->findvalue("//property[propertyName='cmdLine']/value");
+
+      assertEq('mvn cargo:undeploy -f "C:\Users\rsanchez\group1\pom.xml" -P tomcat6x', $commandLine, 
+           'command line doesn\'t match expected output');
+
+};
+
+ntest "deployAppJetty", {}, sub {
+ 
+      doSetup();
+      
+      # run test job
+     
+      my $xpath = $::N->runProcedure($::gtestProjectName, 
+              {procedureName => "deployAppJetty",
+              pollInterval  => '1',
+              timeout => 600,
+                   actualParameter => [
+                  
+                  ]
+      });
+      
+      # make sure it finished
+      my $jobId = 0;
+      my $status = '';
+      
+      assertOK($xpath, 'runProcedure has errors');
+      if ($xpath) {
+       
+          $jobId  = $xpath->findvalue("//jobId");
+          $status = $xpath->findvalue("//status");
+          $outcome = $xpath->findvalue("//outcome");
+  
+          assertTrue($jobId && $jobId ne "",'valid job id');
+          assertEq('completed',$status,"job $jobId complete");
+  
+          #abort if job did not finish
+          if ($status ne 'completed') {
+              assertOK($::N->abortJob($jobId, {force => 1}));
+          }
+      }
+
+      # get the job details
+      $xpath = $::N->getJobDetails($jobId);
+   
+      # get the value of the commands lines
+      my $commandLine = $xpath->findvalue("//property[propertyName='cmdLine']/value");
+
+      assertEq('mvn cargo:deploy -f "C:\Users\rsanchez\group1\pom.xml" -P jetty8x', $commandLine, 
+           'command line doesn\'t match expected output');
+
+};
+
+ntest "deployAppWebLogic", {}, sub {
+ 
+      doSetup();
+      
+      # run test job
+     
+      my $xpath = $::N->runProcedure($::gtestProjectName, 
+              {procedureName => "deployAppWebLogic",
+              pollInterval  => '1',
+              timeout => 600,
+                   actualParameter => [
+                  
+                  ]
+      });
+      
+      # make sure it finished
+      my $jobId = 0;
+      my $status = '';
+      
+      assertOK($xpath, 'runProcedure has errors');
+      if ($xpath) {
+       
+          $jobId  = $xpath->findvalue("//jobId");
+          $status = $xpath->findvalue("//status");
+          $outcome = $xpath->findvalue("//outcome");
+  
+          assertTrue($jobId && $jobId ne "",'valid job id');
+          assertEq('completed',$status,"job $jobId complete");
+  
+          #abort if job did not finish
+          if ($status ne 'completed') {
+              assertOK($::N->abortJob($jobId, {force => 1}));
+          }
+      }
+
+      # get the job details
+      $xpath = $::N->getJobDetails($jobId);
+   
+      # get the value of the commands lines
+      my $commandLine = $xpath->findvalue("//property[propertyName='cmdLine']/value");
+
+      assertEq('mvn cargo:deploy -f "C:\Users\rsanchez\group1\pom.xml" -P weblogic103x -Dorg.weblogic.as.client.connect.timeout=50000', $commandLine, 
+           'command line doesn\'t match expected output');
+
+};
+
+
+ntest "undeployAppWebLogic", {}, sub {
+ 
+      doSetup();
+      
+      # run test job
+     
+      my $xpath = $::N->runProcedure($::gtestProjectName, 
+              {procedureName => "undeployAppWebLogic",
+              pollInterval  => '1',
+              timeout => 600,
+                   actualParameter => [
+                  
+                  ]
+      });
+      
+      # make sure it finished
+      my $jobId = 0;
+      my $status = '';
+      
+      assertOK($xpath, 'runProcedure has errors');
+      if ($xpath) {
+       
+          $jobId  = $xpath->findvalue("//jobId");
+          $status = $xpath->findvalue("//status");
+          $outcome = $xpath->findvalue("//outcome");
+  
+          assertTrue($jobId && $jobId ne "",'valid job id');
+          assertEq('completed',$status,"job $jobId complete");
+  
+          #abort if job did not finish
+          if ($status ne 'completed') {
+              assertOK($::N->abortJob($jobId, {force => 1}));
+          }
+      }
+
+      # get the job details
+      $xpath = $::N->getJobDetails($jobId);
+   
+      # get the value of the commands lines
+      my $commandLine = $xpath->findvalue("//property[propertyName='cmdLine']/value");
+
+      assertEq('mvn cargo:undeploy -f "C:\Users\rsanchez\group1\pom.xml" -P weblogic103x -Dorg.weblogic.as.client.connect.timeout=50000', $commandLine, 
+           'command line doesn\'t match expected output');
+
+};
+
+ntest "runContainerJBoss", {}, sub {
+ 
+      doSetup();
+      
+      # run test job
+     
+      my $xpath = $::N->runProcedure($::gtestProjectName, 
+              {procedureName => "runContainerJBoss",
+              pollInterval  => '1',
+              timeout => 600,
+                   actualParameter => [
+                  
+                  ]
+      });
+      
+      # make sure it finished
+      my $jobId = 0;
+      my $status = '';
+      
+      assertOK($xpath, 'runProcedure has errors');
+      if ($xpath) {
+       
+          $jobId  = $xpath->findvalue("//jobId");
+          $status = $xpath->findvalue("//status");
+          $outcome = $xpath->findvalue("//outcome");
+  
+          assertTrue($jobId && $jobId ne "",'valid job id');
+          assertEq('completed',$status,"job $jobId complete");
+  
+          #abort if job did not finish
+          if ($status ne 'completed') {
+              assertOK($::N->abortJob($jobId, {force => 1}));
+          }
+      }
+
+      # get the job details
+      $xpath = $::N->getJobDetails($jobId);
+   
+      # get the value of the commands lines
+      my $commandLine = $xpath->findvalue("//property[propertyName='cmdLine']/value");
+
+      assertEq('mvn cargo:run -f "C:\Users\rsanchez\group1\pom.xml" -P jboss7x', $commandLine, 
+           'command line doesn\'t match expected output');
+
+};
+
+
+ntest "stopContainerJBoss", {}, sub {
+ 
+      doSetup();
+      
+      # run test job
+     
+      my $xpath = $::N->runProcedure($::gtestProjectName, 
+              {procedureName => "stopContainerJBoss",
+              pollInterval  => '1',
+              timeout => 600,
+                   actualParameter => [
+                  
+                  ]
+      });
+      
+      # make sure it finished
+      my $jobId = 0;
+      my $status = '';
+      
+      assertOK($xpath, 'runProcedure has errors');
+      if ($xpath) {
+       
+          $jobId  = $xpath->findvalue("//jobId");
+          $status = $xpath->findvalue("//status");
+          $outcome = $xpath->findvalue("//outcome");
+  
+          assertTrue($jobId && $jobId ne "",'valid job id');
+          assertEq('completed',$status,"job $jobId complete");
+  
+          #abort if job did not finish
+          if ($status ne 'completed') {
+              assertOK($::N->abortJob($jobId, {force => 1}));
+          }
+      }
+
+      # get the job details
+      $xpath = $::N->getJobDetails($jobId);
+   
+      # get the value of the commands lines
+      my $commandLine = $xpath->findvalue("//property[propertyName='cmdLine']/value");
+
+      assertEq('mvn cargo:stop -f "C:\Users\rsanchez\group1\pom.xml" -P jboss7x', $commandLine, 
+           'command line doesn\'t match expected output');
+
+};
+
+
+ntest "runContainerTomcat", {}, sub {
+ 
+      doSetup();
+      
+      # run test job
+     
+      my $xpath = $::N->runProcedure($::gtestProjectName, 
+              {procedureName => "runContainerTomcat",
+              pollInterval  => '1',
+              timeout => 600,
+                   actualParameter => [
+                  
+                  ]
+      });
+      
+      # make sure it finished
+      my $jobId = 0;
+      my $status = '';
+      
+      assertOK($xpath, 'runProcedure has errors');
+      if ($xpath) {
+       
+          $jobId  = $xpath->findvalue("//jobId");
+          $status = $xpath->findvalue("//status");
+          $outcome = $xpath->findvalue("//outcome");
+  
+          assertTrue($jobId && $jobId ne "",'valid job id');
+          assertEq('completed',$status,"job $jobId complete");
+  
+          #abort if job did not finish
+          if ($status ne 'completed') {
+              assertOK($::N->abortJob($jobId, {force => 1}));
+          }
+      }
+
+      # get the job details
+      $xpath = $::N->getJobDetails($jobId);
+   
+      # get the value of the commands lines
+      my $commandLine = $xpath->findvalue("//property[propertyName='cmdLine']/value");
+
+      assertEq('mvn cargo:run -f "C:\Users\rsanchez\group1\pom.xml" -P tomcat6x', $commandLine, 
+           'command line doesn\'t match expected output');
+
+};
+
+
+ntest "stopContainerTomcat", {}, sub {
+ 
+      doSetup();
+      
+      # run test job
+     
+      my $xpath = $::N->runProcedure($::gtestProjectName, 
+              {procedureName => "stopContainerTomcat",
+              pollInterval  => '1',
+              timeout => 600,
+                   actualParameter => [
+                  
+                  ]
+      });
+      
+      # make sure it finished
+      my $jobId = 0;
+      my $status = '';
+      
+      assertOK($xpath, 'runProcedure has errors');
+      if ($xpath) {
+       
+          $jobId  = $xpath->findvalue("//jobId");
+          $status = $xpath->findvalue("//status");
+          $outcome = $xpath->findvalue("//outcome");
+  
+          assertTrue($jobId && $jobId ne "",'valid job id');
+          assertEq('completed',$status,"job $jobId complete");
+  
+          #abort if job did not finish
+          if ($status ne 'completed') {
+              assertOK($::N->abortJob($jobId, {force => 1}));
+          }
+      }
+
+      # get the job details
+      $xpath = $::N->getJobDetails($jobId);
+   
+      # get the value of the commands lines
+      my $commandLine = $xpath->findvalue("//property[propertyName='cmdLine']/value");
+
+      assertEq('mvn cargo:stop -f "C:\Users\rsanchez\group1\pom.xml" -P tomcat6x', $commandLine, 
+           'command line doesn\'t match expected output');
+
+};
+
+ntest "runContainerWebLogic", {}, sub {
+ 
+      doSetup();
+      
+      # run test job
+     
+      my $xpath = $::N->runProcedure($::gtestProjectName, 
+              {procedureName => "runContainerWebLogic",
+              pollInterval  => '1',
+              timeout => 600,
+                   actualParameter => [
+                  
+                  ]
+      });
+      
+      # make sure it finished
+      my $jobId = 0;
+      my $status = '';
+      
+      assertOK($xpath, 'runProcedure has errors');
+      if ($xpath) {
+       
+          $jobId  = $xpath->findvalue("//jobId");
+          $status = $xpath->findvalue("//status");
+          $outcome = $xpath->findvalue("//outcome");
+  
+          assertTrue($jobId && $jobId ne "",'valid job id');
+          assertEq('completed',$status,"job $jobId complete");
+  
+          #abort if job did not finish
+          if ($status ne 'completed') {
+              assertOK($::N->abortJob($jobId, {force => 1}));
+          }
+      }
+
+      # get the job details
+      $xpath = $::N->getJobDetails($jobId);
+   
+      # get the value of the commands lines
+      my $commandLine = $xpath->findvalue("//property[propertyName='cmdLine']/value");
+
+      assertEq('mvn cargo:run -f "C:\Users\rsanchez\group1\pom.xml" -P weblogic103x', $commandLine, 
+           'command line doesn\'t match expected output');
+
+};
+
+
+ntest "stopContainerWebLogic", {}, sub {
+ 
+      doSetup();
+      
+      # run test job
+     
+      my $xpath = $::N->runProcedure($::gtestProjectName, 
+              {procedureName => "stopContainerWebLogic",
+              pollInterval  => '1',
+              timeout => 600,
+                   actualParameter => [
+                  
+                  ]
+      });
+      
+      # make sure it finished
+      my $jobId = 0;
+      my $status = '';
+      
+      assertOK($xpath, 'runProcedure has errors');
+      if ($xpath) {
+       
+          $jobId  = $xpath->findvalue("//jobId");
+          $status = $xpath->findvalue("//status");
+          $outcome = $xpath->findvalue("//outcome");
+  
+          assertTrue($jobId && $jobId ne "",'valid job id');
+          assertEq('completed',$status,"job $jobId complete");
+  
+          #abort if job did not finish
+          if ($status ne 'completed') {
+              assertOK($::N->abortJob($jobId, {force => 1}));
+          }
+      }
+
+      # get the job details
+      $xpath = $::N->getJobDetails($jobId);
+   
+      # get the value of the commands lines
+      my $commandLine = $xpath->findvalue("//property[propertyName='cmdLine']/value");
+
+      assertEq('mvn cargo:stop -f "C:\Users\rsanchez\group1\pom.xml" -P weblogic103x', $commandLine, 
+           'command line doesn\'t match expected output');
+
+};
